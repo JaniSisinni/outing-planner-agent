@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🌤️ Outing Planner</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 720px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 { font-size: 1.2rem; font-weight: 700; }
+    .header p  { font-size: 0.8rem; opacity: 0.8; margin-top: 2px; }
+
+    #reset-btn {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    #reset-btn:hover { background: rgba(255,255,255,0.3); }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      line-height: 1.5;
+      font-size: 0.92rem;
+      white-space: pre-wrap;
+    }
+
+    .message.user {
+      background: #6366f1;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.assistant {
+      background: #f1f5f9;
+      color: #1e293b;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message.thinking {
+      background: #f1f5f9;
+      color: #94a3b8;
+      align-self: flex-start;
+      font-style: italic;
+    }
+
+    .input-area {
+      padding: 16px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      gap: 10px;
+    }
+
+    #user-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: none;
+    }
+    #user-input:focus { border-color: #6366f1; }
+
+    #send-btn {
+      background: #6366f1;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: 0.92rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    #send-btn:hover:not(:disabled) { background: #4f46e5; }
+    #send-btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 0 20px 12px;
+    }
+
+    .suggestion-chip {
+      background: #ede9fe;
+      color: #6d28d9;
+      border: none;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .suggestion-chip:hover { background: #ddd6fe; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>🌤️ Outing Planner</h1>
+        <p>Tell me your budget, group size & location — I'll find the best ideas!</p>
+      </div>
+      <button id="reset-btn">New Chat</button>
+    </div>
+
+    <div id="messages">
+      <div class="message assistant">
+        Hey! 👋 I'm your Outing Planner. Tell me a bit about your plans — for example:<br><br>
+        <em>"I have $80 for 4 people in Austin, TX this evening. We like food and outdoor activities."</em>
+      </div>
+    </div>
+
+    <div class="suggestions" id="suggestions">
+      <button class="suggestion-chip" onclick="fillInput('$50 for 2 people in NYC tonight')">$50 for 2 in NYC 🗽</button>
+      <button class="suggestion-chip" onclick="fillInput('$100 total for 5 friends in LA this weekend')">$100 for 5 in LA 🌴</button>
+      <button class="suggestion-chip" onclick="fillInput('$30 per person, 3 of us in Chicago, preferably indoors')">$30/person in Chicago ❄️</button>
+    </div>
+
+    <div class="input-area">
+      <textarea
+        id="user-input"
+        rows="2"
+        placeholder="e.g. I have $60 for 3 friends in Miami this afternoon..."
+      ></textarea>
+      <button id="send-btn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const messagesEl = document.getElementById("messages");
+    const inputEl    = document.getElementById("user-input");
+    const sendBtn    = document.getElementById("send-btn");
+
+    function fillInput(text) {
+      inputEl.value = text;
+      inputEl.focus();
+    }
+
+    function addMessage(role, text) {
+      const div = document.createElement("div");
+      div.className = `message ${role}`;
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return div;
+    }
+
+    async function sendMessage() {
+      const message = inputEl.value.trim();
+      if (!message) return;
+
+      // Hide suggestions after first message
+      document.getElementById("suggestions").style.display = "none";
+
+      addMessage("user", message);
+      inputEl.value = "";
+      sendBtn.disabled = true;
+
+      const thinking = addMessage("thinking", "🔍 Checking weather & places near you...");
+
+      try {
+        const resp = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+        const data = await resp.json();
+        thinking.remove();
+
+        if (data.error) {
+          addMessage("assistant", "Sorry, something went wrong: " + data.error);
+        } else {
+          addMessage("assistant", data.response);
+        }
+      } catch (err) {
+        thinking.remove();
+        addMessage("assistant", "Network error. Please try again.");
+      } finally {
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    inputEl.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    document.getElementById("reset-btn").addEventListener("click", async () => {
+      await fetch("/reset", { method: "POST" });
+      messagesEl.innerHTML = `
+        <div class="message assistant">
+          Hey! 👋 I'm your Outing Planner. Tell me a bit about your plans — for example:<br><br>
+          <em>"I have $80 for 4 people in Austin, TX this evening. We like food and outdoor activities."</em>
+        </div>`;
+      document.getElementById("suggestions").style.display = "flex";
+    });
+  </script>
+</body>
+</html>
